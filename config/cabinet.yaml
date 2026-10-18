@@ -1,0 +1,29 @@
+# Règles du cabinet "Dr Test" (médecine générale).
+# Appliquées par le code, jamais par le modèle de langage.
+# Valeurs = hypothèses de départ, à faire valider par le médecin.
+
+cabinet:
+  nom: "Cabinet Dr Test"
+  fuseau_horaire: "Europe/Paris"
+
+# Jours : 0 = lundi ... 6 = dimanche. Samedi (5) et dimanche (6) absents = fermé.
+horaires:
+  0: [["09:00", "12:30"], ["14:00", "18:30"]]
+  1: [["09:00", "12:30"], ["14:00", "18:30"]]
+  2: [["09:00", "12:30"], ["14:00", "18:30"]]
+  3: [["09:00", "12:30"], ["14:00", "18:30"]]
+  4: [["09:00", "12:30"], ["14:00", "18:30"]]
+
+# Durées en minutes
+types_consultation:
+  standard: 20
+  nouveau_patient: 30
+  suivi: 15
+
+reservation:
+  creneaux_urgence_par_jour: 2     # gardés libres, non réservables par l'agent
+  delai_minimum_heures: 2          # pas de RDV à moins de 2 h
+  horizon_jours: 30                # pas de RDV au-delà de 30 jours
+  annulation_autonome_heures: 24   # en dessous de 24 h : passage au secrétariat
+  pas_creneaux_minutes: 10         # les créneaux proposés démarrent toutes les 10 min
+  teleconsultation: false

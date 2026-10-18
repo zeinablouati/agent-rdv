@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cabinet Dr Test — Prise de rendez-vous</title>
+<style>
+  :root { --bleu:#1d6fb8; --bleu-clair:#e8f1fa; --gris:#f4f5f7; --texte:#222; --bordure:#e0e3e8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--gris); color:var(--texte); }
+  .fenetre { max-width:560px; margin:24px auto; background:#fff; border:1px solid var(--bordure); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 48px); }
+  .entete { background:var(--bleu); color:#fff; padding:16px 20px; }
+  .entete h1 { margin:0; font-size:17px; font-weight:600; }
+  .entete p { margin:2px 0 0; font-size:13px; opacity:.9; }
+  .messages { flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:10px; }
+  .bulle { max-width:80%; padding:10px 14px; border-radius:14px; font-size:14.5px; line-height:1.5; white-space:pre-wrap; }
+  .agent { align-self:flex-start; background:var(--bleu-clair); border-bottom-left-radius:4px; }
+  .patient { align-self:flex-end; background:var(--bleu); color:#fff; border-bottom-right-radius:4px; }
+  .attente { align-self:flex-start; color:#888; font-size:13px; font-style:italic; }
+  .saisie { display:flex; gap:8px; padding:12px; border-top:1px solid var(--bordure); background:#fff; }
+  .saisie input { flex:1; padding:11px 14px; border:1px solid var(--bordure); border-radius:10px; font-size:14.5px; outline:none; }
+  .saisie input:focus { border-color:var(--bleu); }
+  .saisie button { padding:0 18px; border:none; background:var(--bleu); color:#fff; border-radius:10px; font-size:14.5px; cursor:pointer; }
+  .saisie button:disabled { opacity:.5; cursor:default; }
+</style>
+</head>
+<body>
+<div class="fenetre">
+  <div class="entete">
+    <h1>Cabinet Dr Test</h1>
+    <p>Assistant de prise de rendez-vous</p>
+  </div>
+  <div class="messages" id="messages"></div>
+  <form class="saisie" id="form">
+    <input id="champ" autocomplete="off" placeholder="Écrivez votre message…" autofocus>
+    <button id="envoyer" type="submit">Envoyer</button>
+  </form>
+</div>
+<script>
+  const messages = document.getElementById("messages");
+  const form = document.getElementById("form");
+  const champ = document.getElementById("champ");
+  const bouton = document.getElementById("envoyer");
+  let sessionId = null;
+
+  function ajouter(texte, classe) {
+    const div = document.createElement("div");
+    div.className = "bulle " + classe;
+    div.textContent = texte;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+  }
+
+  ajouter("Bonjour, je suis l'assistant du cabinet. Comment puis-je vous aider ?", "agent");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const texte = champ.value.trim();
+    if (!texte) return;
+    ajouter(texte, "patient");
+    champ.value = "";
+    bouton.disabled = true;
+    const attente = ajouter("…", "attente");
+    try {
+      const reponse = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: texte, session_id: sessionId }),
+      });
+      const data = await reponse.json();
+      sessionId = data.session_id;
+      attente.remove();
+      ajouter(data.reply, "agent");
+    } catch (err) {
+      attente.remove();
+      ajouter("Erreur de connexion au serveur.", "agent");
+    } finally {
+      bouton.disabled = false;
+      champ.focus();
+    }
+  });
+</script>
+</body>
+</html>

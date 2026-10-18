@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+secrets/
+*.db
+data/*.sqlite
+.DS_Store
+data/chroma/

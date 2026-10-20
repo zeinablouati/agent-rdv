@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de bord — Cabinet</title>
+<style>
+  :root { --bleu:#1d6fb8; --gris:#f4f5f7; --texte:#222; --bordure:#e0e3e8; --vert:#1a7f52; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--gris); color:var(--texte); }
+  .entete { background:var(--bleu); color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+  .entete h1 { margin:0; font-size:18px; font-weight:600; }
+  .entete a { color:#fff; font-size:13.5px; text-decoration:none; border:1px solid rgba(255,255,255,.6); padding:6px 12px; border-radius:8px; }
+  main { max-width:900px; margin:28px auto; padding:0 20px; display:grid; gap:24px; }
+  section { background:#fff; border:1px solid var(--bordure); border-radius:12px; padding:20px 22px; }
+  h2 { margin:0 0 14px; font-size:15.5px; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; font-weight:600; color:#666; font-size:12.5px; text-transform:uppercase; letter-spacing:.03em; padding:0 10px 8px; }
+  td { padding:9px 10px; border-top:1px solid var(--bordure); }
+  .heure { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .type { color:#666; }
+  .vide { color:#888; font-size:13.5px; padding:6px 0; }
+  form.traiter { margin:0; }
+  button.traiter { border:1px solid var(--bordure); background:var(--gris); color:var(--vert); border-radius:7px; padding:5px 10px; font-size:12.5px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="entete">
+  <h1>Tableau de bord — Cabinet</h1>
+  <a href="/medecin/logout">Se déconnecter</a>
+</div>
+<main>
+  <section>
+    <h2>Rendez-vous du jour — {{DATE}}</h2>
+    {{RDV}}
+  </section>
+  <section>
+    <h2>Demandes de rappel</h2>
+    {{DEMANDES}}
+  </section>
+</main>
+</body>
+</html>

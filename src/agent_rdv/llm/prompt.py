@@ -32,7 +32,7 @@ def _types_txt(regles: Regles) -> str:
 
 def systeme(regles: Regles, maintenant: datetime, avec_infos: bool = False) -> str:
     regle_infos = (
-        "\n- Pour toute question pratique (horaires, adresse, accès, tarifs, remboursement, documents à apporter, carte Vitale), appelle chercher_infos et réponds UNIQUEMENT à partir des passages qu'il renvoie. Si rien ne correspond, dis que tu n'as pas l'information et propose de transmettre au secrétariat."
+        "\n- Pour toute question pratique (horaires, adresse, accès, tarifs, remboursement, documents à apporter, carte Vitale, préparation d'un examen comme le jeûne avant une prise de sang, déroulement d'un acte), appelle chercher_infos et réponds UNIQUEMENT à partir des passages qu'il renvoie. Ces consignes pratiques ne sont PAS un conseil médical. Si rien ne correspond, dis que tu n'as pas l'information et propose de transmettre au secrétariat."
         if avec_infos else ""
     )
     return f"""Tu es l'assistant de prise de rendez-vous du {regles.cabinet.nom}, un cabinet de médecine générale.

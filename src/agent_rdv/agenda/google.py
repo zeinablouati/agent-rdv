@@ -21,6 +21,9 @@ from .modeles import Rdv
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 MARQUEUR = "agent_rdv"  # pour reconnaître nos événements parmi d'autres
 HORIZON_RECHERCHE_JOURS = 370
+# Nouvelles tentatives en cas de coupure réseau. Lectures seulement : rejouer
+# une création pourrait créer le rendez-vous en double.
+NB_ESSAIS_LECTURE = 2
 
 
 class AgendaGoogle(Agenda):
@@ -87,7 +90,7 @@ class AgendaGoogle(Agenda):
                 singleEvents=True,
                 orderBy="startTime",
                 pageToken=page,
-            ).execute()
+            ).execute(num_retries=NB_ESSAIS_LECTURE)
             items.extend(e for e in reponse.get("items", []) if e.get("start", {}).get("dateTime"))
             page = reponse.get("nextPageToken")
             if not page:
@@ -133,7 +136,9 @@ class AgendaGoogle(Agenda):
 
     def obtenir(self, rdv_id: str) -> Rdv | None:
         try:
-            event = self._service.events().get(calendarId=self._calendar_id, eventId=rdv_id).execute()
+            event = self._service.events().get(calendarId=self._calendar_id, eventId=rdv_id).execute(
+                num_retries=NB_ESSAIS_LECTURE
+            )
         except HttpError as err:
             if self._statut(err) in (404, 410):
                 return None

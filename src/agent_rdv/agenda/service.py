@@ -30,6 +30,7 @@ class ServiceRendezVous:
         self.notificateur = notificateur
         self.journal = journal
         self._horloge = horloge or (lambda: datetime.now(regles.fuseau))
+
     # --- utilitaires ---
 
     def maintenant(self) -> datetime:
@@ -83,12 +84,14 @@ class ServiceRendezVous:
         return creneaux_libres(
             self.regles, type_consultation, du, au, self.maintenant(), occupes, periode
         )
+
     def premiers_creneaux(self, type_consultation: str, n: int = 3) -> list[Creneau]:
         """Les n créneaux libres les plus proches, à partir de maintenant."""
         aujourdhui = self.maintenant().date()
         horizon = aujourdhui + timedelta(days=self.regles.reservation.horizon_jours)
         creneaux = self.chercher_creneaux(type_consultation, aujourdhui, horizon)
         return creneaux[:n]
+
     def reserver(
         self,
         type_consultation: str,
@@ -121,11 +124,13 @@ class ServiceRendezVous:
             self.notificateur.envoyer(patient.email, sujet, corps)
         except Exception:
             pass
+
     def enregistrer_demande_rappel(self, nom: str, telephone: str, motif: str = "") -> int | None:
         """Consigne une demande de rappel. None si aucun journal n'est configuré."""
         if self.journal is None:
             return None
         return self.journal.ajouter(nom, telephone, motif)
+
     def envoyer_rappels(self, jour: date | None = None) -> int:
         """Envoie un rappel par e-mail pour chaque rendez-vous du jour donné
         (demain par défaut). Renvoie le nombre de rappels envoyés."""
@@ -151,6 +156,21 @@ class ServiceRendezVous:
     def retrouver_rdv(self, nom: str, telephone: str) -> list[Rdv]:
         patients = self.registre.trouver(nom, telephone)
         return self.agenda.rdv_des_patients([p.id for p in patients], self.maintenant())
+
+    def rdv_du_jour(self, jour: date | None = None) -> list[dict]:
+        """Lecture réservée au médecin : les rendez-vous d'un jour, triés par heure,
+        avec le patient résolu (nom + téléphone)."""
+        jour = jour or self.maintenant().date()
+        rdvs = sorted(self._occupes_le(jour), key=lambda r: r.debut)
+        return [
+            {
+                "debut": self._localiser(r.debut),
+                "fin": self._localiser(r.fin),
+                "type": r.type_consultation,
+                "patient": self.registre.obtenir_par_id(r.patient_id),
+            }
+            for r in rdvs
+        ]
 
     def annuler(self, rdv_id: int, nom: str, telephone: str) -> Rdv:
         rdv = self._retrouver(rdv_id, nom, telephone)

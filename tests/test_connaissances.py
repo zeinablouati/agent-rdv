@@ -38,7 +38,13 @@ def test_vide_puis_rempli():
     assert b.est_vide() is True
     b.indexer(PASSAGES)
     assert b.est_vide() is False
-
+def test_reinitialiser_evite_les_doublons():
+    b = BaseConnaissances(faux_embed, nom_collection="test_reinit")
+    b.indexer(PASSAGES)
+    compte = b.collection.count()
+    b.reinitialiser()
+    b.indexer(PASSAGES)
+    assert b.collection.count() == compte  # reconstruction propre, pas de doublons
 
 def test_question_tarif_retrouve_le_passage_tarifs(base):
     passages = base.rechercher("quels sont vos tarifs et le remboursement ?", k=1)

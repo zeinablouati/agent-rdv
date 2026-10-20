@@ -29,9 +29,9 @@ modele = os.getenv("RAG_MODELE", "paraphrase-multilingual-MiniLM-L12-v2")
 print(f"Chargement du modèle d'embeddings ({modele})... (long la première fois)")
 base = BaseConnaissances(embedder_sentence_transformers(modele), chemin=chemin_index)
 
+base.reinitialiser()  # reconstruction à neuf : on efface l'ancien index d'abord
 passages = charger_passages(dossier)
 nombre = base.indexer(passages)
-
 print(f"Indexé {nombre} passage(s) depuis {dossier}.")
 for pid, _ in passages:
     print("  -", pid)

@@ -16,22 +16,76 @@ import chromadb
 Embedder = Callable[[list[str]], list[list[float]]]
 
 
+EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
+
+
+def _lire_fichier(fichier: Path) -> str:
+    """Extrait le texte brut d'un fichier (.md, .txt, .pdf, .docx)."""
+    suffixe = fichier.suffix.lower()
+    if suffixe in {".md", ".txt"}:
+        return fichier.read_text(encoding="utf-8")
+    if suffixe == ".pdf":
+        from pypdf import PdfReader
+
+        return "\n\n".join((page.extract_text() or "") for page in PdfReader(str(fichier)).pages)
+    if suffixe == ".docx":
+        import docx
+
+        return "\n\n".join(p.text for p in docx.Document(str(fichier)).paragraphs)
+    return ""
+
+
+def _decouper_par_taille(texte: str, taille: int = 800, chevauchement: int = 100) -> list[str]:
+    """Découpe un texte en morceaux qui se chevauchent (pour PDF/Word, sans structure nette)."""
+    texte = re.sub(r"[ \t]+", " ", texte).strip()
+    if not texte:
+        return []
+    morceaux, debut = [], 0
+    while debut < len(texte):
+        morceau = texte[debut:debut + taille].strip()
+        if morceau:
+            morceaux.append(morceau)
+        debut += taille - chevauchement
+    return morceaux
+
+
+def _decouper(texte: str, suffixe: str) -> list[str]:
+    if suffixe in {".md", ".txt"}:  # structure propre : on coupe aux lignes vides
+        return [
+            bloc.strip() for bloc in re.split(r"\n\s*\n", texte)
+            if bloc.strip() and not bloc.strip().startswith("# ")  # on saute le grand titre
+        ]
+    return _decouper_par_taille(texte)
+
+
 def charger_passages(dossier) -> list[tuple[str, str]]:
-    """Découpe les fichiers .md d'un dossier en passages (séparés par une ligne vide)."""
+    """Découpe tous les fichiers pris en charge (.md, .txt, .pdf, .docx) d'un dossier
+    en passages prêts à être indexés."""
     passages: list[tuple[str, str]] = []
-    for fichier in sorted(Path(dossier).glob("*.md")):
-        texte = fichier.read_text(encoding="utf-8")
-        for i, bloc in enumerate(b.strip() for b in re.split(r"\n\s*\n", texte)):
-            if bloc and not bloc.startswith("# "):  # on saute le grand titre
-                passages.append((f"{fichier.stem}#{i}", bloc))
+    for fichier in sorted(Path(dossier).iterdir()):
+        if not fichier.is_file() or fichier.suffix.lower() not in EXTENSIONS:
+            continue
+        texte = _lire_fichier(fichier)
+        for i, bloc in enumerate(_decouper(texte, fichier.suffix.lower())):
+            passages.append((f"{fichier.name}#{i}", bloc))
     return passages
 
 
 class BaseConnaissances:
     def __init__(self, embed: Embedder, chemin: Optional[str] = None, nom_collection: str = "cabinet"):
         self.embed = embed
+        self.nom_collection = nom_collection
         self.client = chromadb.PersistentClient(path=chemin) if chemin else chromadb.Client()
         self.collection = self.client.get_or_create_collection(nom_collection)
+
+    def reinitialiser(self) -> None:
+        """Vide complètement l'index (supprime la collection et la recrée),
+        pour une reconstruction propre sans doublons ni passages périmés."""
+        try:
+            self.client.delete_collection(self.nom_collection)
+        except Exception:
+            pass
+        self.collection = self.client.get_or_create_collection(self.nom_collection)
 
     def indexer(self, passages: list[tuple[str, str]]) -> int:
         if not passages:

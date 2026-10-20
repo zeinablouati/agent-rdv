@@ -135,7 +135,16 @@ def test_retrouver_ignore_casse_accents_et_tirets(service):
 def test_retrouver_avec_un_mauvais_telephone_ne_donne_rien(service):
     reserver_sara(service)
     assert service.retrouver_rdv("Ben Ali", "0600000000") == []
+def test_retrouver_accepte_le_nom_complet(service):
+    reserver_sara(service)  # Sara Ben Ali
+    assert len(service.retrouver_rdv("Sara Ben Ali", "0612345678")) == 1  # nom complet
+    assert len(service.retrouver_rdv("Sara", "0612345678")) == 1          # prénom seul
+    assert len(service.retrouver_rdv("Ben Ali", "0612345678")) == 1       # nom seul
 
+
+def test_retrouver_refuse_si_le_nom_ne_correspond_pas(service):
+    reserver_sara(service)
+    assert service.retrouver_rdv("Dupont", "0612345678") == []  # bon téléphone, mauvais nom
 
 # --- annuler ---
 

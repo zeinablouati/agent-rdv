@@ -96,14 +96,23 @@ class RegistrePatients:
         return self._patient(ligne)
 
     def trouver(self, nom: str, telephone: str) -> list[Patient]:
-        """Plusieurs résultats possibles : une famille peut partager nom et téléphone."""
+        """Identifie par le téléphone (clé forte), puis vérifie qu'un mot du nom
+        fourni correspond au prénom ou au nom. Tolérant au nom complet (« Prénom Nom »).
+        Plusieurs résultats possibles : une famille peut partager un téléphone."""
         tel = normaliser_telephone(telephone)
+        mots_demandes = set(normaliser_nom(nom).split())
         with self._verrou:
             lignes = self._cx.execute(
-                "SELECT id, prenom, nom, telephone, email FROM patients WHERE nom_cle = ? AND telephone = ?",
-                (normaliser_nom(nom), tel),
+                "SELECT id, prenom, nom, telephone, email, prenom_cle, nom_cle "
+                "FROM patients WHERE telephone = ?",
+                (tel,),
             ).fetchall()
-        return [self._patient(ligne) for ligne in lignes]
+        resultat = []
+        for ligne in lignes:
+            mots_connus = set(ligne[5].split()) | set(ligne[6].split())
+            if mots_demandes & mots_connus:
+                resultat.append(self._patient(ligne[:5]))
+        return resultat
 
     def obtenir_par_id(self, patient_id: int) -> Patient | None:
         with self._verrou:

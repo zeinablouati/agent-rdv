@@ -6,6 +6,8 @@ tests), ce qui rend la boucle testable sans Internet."""
 from __future__ import annotations
 
 import json
+import logging
+import time
 from typing import Any
 
 from ..agenda.service import ServiceRendezVous
@@ -19,11 +21,14 @@ REPLI = (
     "Je transmets au secrétariat du cabinet, qui vous recontactera."
 )
 
+journal = logging.getLogger(__name__)
+
 
 class AgentRDV:
     def __init__(self, service: ServiceRendezVous, regles: Regles, client: Any, modele: str,
-                 max_tours: int = 6, trace=None, connaissances=None):
+                 max_tours: int = 6, trace=None, connaissances=None, pause_relance: float = 2.0):
         self.service = service
+        self.pause_relance = pause_relance  # secondes avant le 2e essai (absorbe les limites de débit)
         self.regles = regles
         self.client = client
         self.modele = modele
@@ -38,6 +43,26 @@ class AgentRDV:
         contenu = systeme(self.regles, self.service.maintenant(), avec_infos=self.avec_infos)
         return [{"role": "system", "content": contenu}]
 
+    def _appeler_llm(self, historique: list[dict]):
+        """Appelle le LLM, avec un nouvel essai en cas d'échec transitoire.
+        Le 2e essai ajoute un peu d'aléa pour éviter de reproduire le même raté."""
+        derniere_erreur = None
+        for essai, temperature in enumerate((0, 0.5)):
+            if essai > 0 and self.pause_relance:
+                time.sleep(self.pause_relance)
+            try:
+                return self.client.chat.completions.create(
+                    model=self.modele,
+                    messages=historique,
+                    tools=self.schemas,
+                    tool_choice="auto",
+                    temperature=temperature,
+                )
+            except Exception as erreur:
+                journal.warning("Appel LLM échoué (essai %d) : %r", essai + 1, erreur)
+                derniere_erreur = erreur
+        raise derniere_erreur
+
     def repondre(self, historique: list[dict], message: str) -> str:
         # 1. Garde-fou urgences : on ne consulte même pas le LLM.
         if est_urgence(message):
@@ -49,13 +74,13 @@ class AgentRDV:
 
         # 2. Boucle : le LLM répond, ou demande d'exécuter des outils, et on reboucle.
         for _ in range(self.max_tours):
-            reponse = self.client.chat.completions.create(
-                model=self.modele,
-                messages=historique,
-                tools=self.schemas,
-                tool_choice="auto",
-                temperature=0,
-            )
+            try:
+                reponse = self._appeler_llm(historique)
+            except Exception:
+                # Erreur de l'API LLM persistante (après un nouvel essai) :
+                # on ne plante jamais, on passe la main au secrétariat.
+                historique.append({"role": "assistant", "content": REPLI})
+                return REPLI
             msg = reponse.choices[0].message
             appels = getattr(msg, "tool_calls", None)
 
@@ -85,11 +110,6 @@ class AgentRDV:
                 resultat = self.dispatcheur.executer(tc.function.name, arguments)
                 if self.trace is not None:
                     self.trace(tc.function.name, arguments, resultat)
-                historique.append({
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": json.dumps(resultat, ensure_ascii=False),
-                })
                 historique.append({
                     "role": "tool",
                     "tool_call_id": tc.id,

@@ -64,7 +64,45 @@ def test_enchainement_llm_outil_reponse(service, regles):
     messages_outil = [m for m in historique if m.get("role") == "tool"]
     assert messages_outil and json.loads(messages_outil[0]["content"])["ok"] is True
 
+class ClientEnErreur:
+    """Simule une panne de l'API LLM (exception à chaque appel)."""
 
+    def __init__(self):
+        self.appels = []
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    def _create(self, **kwargs):
+        self.appels.append(kwargs)
+        raise RuntimeError("panne LLM simulée")
+
+
+def test_erreur_llm_renvoie_repli_sans_planter(service, regles):
+    agent = AgentRDV(service, regles, ClientEnErreur(), modele="faux", pause_relance=0)
+    reponse = agent.repondre(agent.nouvelle_conversation(), "Bonjour")
+    assert "secrétariat" in reponse
+    assert len(agent.client.appels) == 2  # un essai + un nouvel essai avant d'abandonner
+
+
+class ClientHoquet:
+    """Échoue au 1er appel, réussit au 2e (hoquet transitoire)."""
+
+    def __init__(self, reponse):
+        self.n = 0
+        self._reponse = reponse
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    def _create(self, **kwargs):
+        self.n += 1
+        if self.n == 1:
+            raise RuntimeError("hoquet transitoire")
+        return SimpleNamespace(choices=[SimpleNamespace(message=self._reponse)])
+
+
+def test_reessaie_apres_un_hoquet(service, regles):
+    agent = AgentRDV(service, regles, ClientHoquet(msg_texte("Bonjour, je vous écoute.")), modele="faux", pause_relance=0)
+    reponse = agent.repondre(agent.nouvelle_conversation(), "bonjour")
+    assert reponse == "Bonjour, je vous écoute."
+    
 def test_repli_si_trop_de_tours(service, regles):
     boucle = [msg_outil("chercher_creneaux", {"type_consultation": "standard", "date_debut": "2026-10-22"}) for _ in range(10)]
     agent = construire_agent(service, regles, boucle)

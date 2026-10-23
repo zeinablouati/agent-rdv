@@ -1,7 +1,16 @@
 """Vague Voix V1 : l'orchestration du canal vocal, avec de faux micro/voix.
 Aucun micro, aucun haut-parleur, aucun réseau."""
 
-from agent_rdv.voix.base import ACCUEIL, AU_REVOIR, SILENCE, CanalVocal, Synthetiseur, Transcripteur
+from agent_rdv.voix.base import (
+    ACCUEIL,
+    AU_REVOIR,
+    SILENCE,
+    CanalVocal,
+    Synthetiseur,
+    Transcripteur,
+    extraire_email_dicte,
+    nettoyer_pour_voix,
+)
 
 
 class FauxMicro(Transcripteur):
@@ -60,6 +69,40 @@ def test_deux_silences_raccrochent():
     canal.boucle()
     assert SILENCE in voix.dits  # relance après le 1er silence
     assert voix.dits[-1] == AU_REVOIR  # raccroche au 2e
+
+
+def test_nettoyer_retire_le_markdown():
+    sale = "**Parfait**, je vous propose *9h20* :\n- lundi\n- mardi"
+    propre = nettoyer_pour_voix(sale)
+    assert "*" not in propre and "-" not in propre.split()  # plus de puces ni d'astérisques
+    assert "9h20" in propre and "\n" not in propre
+
+
+class AgentMarkdown(FauxAgent):
+    def repondre(self, historique, message):
+        return "**Très bien**, rendez-vous à *9h20*."
+
+
+def test_la_voix_ne_prononce_pas_les_asterisques():
+    voix = FausseVoix()
+    canal = CanalVocal(AgentMarkdown(), FauxMicro(["un rendez-vous"]), voix)
+    canal.un_tour()
+    assert voix.dits and "*" not in voix.dits[-1]
+
+
+def test_extraire_email_dicte():
+    assert extraire_email_dicte("zeineb point louati arobase gmail point com") == "zeineb.louati@gmail.com"
+    assert extraire_email_dicte("mon adresse est jean arobase exemple point fr") == "jean@exemple.fr"
+    # une phrase ordinaire avec « point » mais sans arobase : on ne déclenche rien
+    assert extraire_email_dicte("à quel point c'est loin") is None
+
+
+def test_un_tour_reconstruit_l_email_avant_le_cerveau():
+    agent = FauxAgent()
+    canal = CanalVocal(agent, FauxMicro(["zeineb point louati arobase gmail point com"]), FausseVoix())
+    tour = canal.un_tour()
+    # le cerveau a reçu l'adresse propre, pas les mots dictés
+    assert "zeineb.louati@gmail.com" in tour["reponse"]
 
 
 def test_le_cerveau_garde_le_contexte_entre_les_tours():

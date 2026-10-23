@@ -29,3 +29,8 @@ itsdangerous>=2.1
 
 # Espace médecin : export PDF des documents patients
 fpdf2>=2.7
+
+# Canal vocal (test micro local) : oreille whisper + micro + voix hors-ligne
+faster-whisper>=1.0
+sounddevice>=0.4
+pyttsx3>=2.90

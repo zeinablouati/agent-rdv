@@ -8,9 +8,10 @@
   :root { --bleu:#1d6fb8; --gris:#f4f5f7; --texte:#222; --bordure:#e0e3e8; --vert:#1a7f52; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--gris); color:var(--texte); }
-  .entete { background:var(--bleu); color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
-  .entete h1 { margin:0; font-size:18px; font-weight:600; }
-  .entete a { color:#fff; font-size:13.5px; text-decoration:none; border:1px solid rgba(255,255,255,.6); padding:6px 12px; border-radius:8px; }
+  .entete { background:var(--bleu); color:#fff; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; }
+  .entete nav { display:flex; gap:16px; align-items:center; }
+  .entete a { color:#fff; font-size:13.5px; text-decoration:none; }
+  .entete a.bouton { border:1px solid rgba(255,255,255,.6); padding:6px 12px; border-radius:8px; }
   main { max-width:900px; margin:28px auto; padding:0 20px; display:grid; gap:24px; }
   section { background:#fff; border:1px solid var(--bordure); border-radius:12px; padding:20px 22px; }
   h2 { margin:0 0 14px; font-size:15.5px; font-weight:600; }
@@ -26,7 +27,10 @@
 </head>
 <body>
 <div class="entete">
-  <h1>Tableau de bord — Cabinet</h1>
+  <nav>
+    <a href="/medecin" class="bouton">Tableau de bord</a>
+    <a href="/medecin/patients" class="bouton">Patients</a>
+  </nav>
   <a href="/medecin/logout">Se déconnecter</a>
 </div>
 <main>

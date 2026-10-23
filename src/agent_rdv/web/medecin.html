@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITRE}} — Espace médecin</title>
+<style>
+  :root { --bleu:#1d6fb8; --gris:#f4f5f7; --texte:#222; --bordure:#e0e3e8; --vert:#1a7f52; --rouge:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--gris); color:var(--texte); }
+  .entete { background:var(--bleu); color:#fff; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; }
+  .entete nav { display:flex; gap:16px; align-items:center; }
+  .entete a { color:#fff; font-size:13.5px; text-decoration:none; }
+  .entete a.bouton { border:1px solid rgba(255,255,255,.6); padding:6px 12px; border-radius:8px; }
+  main { max-width:900px; margin:28px auto; padding:0 20px; display:grid; gap:24px; }
+  section { background:#fff; border:1px solid var(--bordure); border-radius:12px; padding:20px 22px; }
+  h2 { margin:0 0 14px; font-size:15.5px; font-weight:600; }
+  h3 { margin:0 0 4px; font-size:14.5px; font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th { text-align:left; font-weight:600; color:#666; font-size:12.5px; text-transform:uppercase; letter-spacing:.03em; padding:0 10px 8px; }
+  td { padding:9px 10px; border-top:1px solid var(--bordure); }
+  a.lien { color:var(--bleu); text-decoration:none; font-weight:500; }
+  .vide { color:#888; font-size:13.5px; padding:6px 0; }
+  .meta { color:#777; font-size:12.5px; }
+  label { display:block; font-size:13px; margin:12px 0 5px; color:#444; }
+  textarea, input, select { width:100%; padding:9px 11px; border:1px solid var(--bordure); border-radius:9px; font-size:14px; font-family:inherit; }
+  textarea { min-height:64px; resize:vertical; }
+  .doc { border:1px solid var(--bordure); border-radius:10px; padding:16px; margin-bottom:14px; }
+  .badge { font-size:11.5px; padding:2px 9px; border-radius:20px; font-weight:600; }
+  .badge.brouillon { background:#fff3e0; color:#9a5b00; }
+  .badge.valide { background:#e6f4ec; color:var(--vert); }
+  .ligne-boutons { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  button { border:none; border-radius:9px; padding:9px 16px; font-size:14px; cursor:pointer; }
+  button.principal { background:var(--bleu); color:#fff; }
+  button.valider { background:var(--vert); color:#fff; }
+  button.discret { background:var(--gris); color:#555; border:1px solid var(--bordure); }
+  form.inline { margin:0; }
+  .fige { white-space:pre-wrap; font-size:14px; line-height:1.5; }
+  .avert { background:#fbeae9; color:var(--rouge); font-size:12.5px; padding:8px 12px; border-radius:9px; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="entete">
+  <nav>
+    <a href="/medecin" class="bouton">Tableau de bord</a>
+    <a href="/medecin/patients" class="bouton">Patients</a>
+  </nav>
+  <a href="/medecin/logout">Se déconnecter</a>
+</div>
+<main>
+{{CORPS}}
+</main>
+</body>
+</html>

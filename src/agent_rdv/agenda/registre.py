@@ -114,6 +114,15 @@ class RegistrePatients:
                 resultat.append(self._patient(ligne[:5]))
         return resultat
 
+    def lister_tous(self) -> list[Patient]:
+        """Tous les patients, classés par nom puis prénom (pour l'espace médecin)."""
+        with self._verrou:
+            lignes = self._cx.execute(
+                "SELECT id, prenom, nom, telephone, email FROM patients "
+                "ORDER BY nom_cle, prenom_cle"
+            ).fetchall()
+        return [self._patient(l) for l in lignes]
+
     def obtenir_par_id(self, patient_id: int) -> Patient | None:
         with self._verrou:
             ligne = self._cx.execute(

@@ -26,3 +26,6 @@ uvicorn>=0.29
 httpx>=0.27
 python-multipart>=0.0.9
 itsdangerous>=2.1
+
+# Espace médecin : export PDF des documents patients
+fpdf2>=2.7
